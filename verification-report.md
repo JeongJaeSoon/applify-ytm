@@ -37,7 +37,11 @@
 | 4 | Progress↔Transport 시각 결합 | ✅ Transport `margin-top: -10px` 로 timestamp 행과 약한 겹침 |
 | 4 | 토글 시각 통일 (greyscale) | ✅ off=회색, on=흰색 — 액센트 색 의존 제거, 셔플 dot 우상단, repeat ALL 중앙 dot, ONE "1" 배지 |
 | 4 | 한국어 lyric wrap orphan 방지 | ✅ `word-break: keep-all`, `text-wrap: balance` |
-| 4 | dist zip 패키징 | ✅ `applify-ytm-0.1.0.zip` 34KB (5MB 제한 대비 0.7%) |
+| 4 | 광고 감지 → 토스트 | ✅ `body.ad-showing` 토글 시 1초 내 Toast = "Ad playing" |
+| 4 | SPA 네비게이션 재바인딩 | ✅ `yt-navigate-finish` dispatch 후 sync engine crash 없음 (250ms reattach) |
+| 4 | 다국어 가사 폰트 fallback | ✅ `font-family: "Noto Sans","Noto Sans KR","Noto Sans JP",...` (KR/JP 자동 fallback) |
+| 4 | 브랜드 마크 아이콘 (16/48/128) | ✅ `scripts/gen-icons.mjs` 의 SVG conic-gradient → sharp PNG (총 33KB) |
+| 4 | dist zip 패키징 | ✅ `applify-ytm-0.1.0.zip` 67KB (5MB 제한 대비 1.3%) |
 
 ## 라이브 측정 (Chrome 자동화로 직접 측정)
 
@@ -66,14 +70,13 @@ dist/
 ├── assets/
 │   ├── main.ts.js             102 KB  ← content script (Svelte App + sync + palette + 2-tier lyrics)
 │   └── service-worker.ts.js   304 B
-└── icons/icon-{16,48,128}.png 68 B each (placeholder transparent PNG)
+└── icons/icon-{16,48,128}.png 0.92 / 5.54 / 26.94 KB (brand-mark conic-gradient)
 ```
 
-zip 패키지: `applify-ytm-0.1.0.zip` (34 KB, gzip 33 KB)
+zip 패키지: `applify-ytm-0.1.0.zip` (67 KB)
 
 ## 알려진 한계
 
-- **아이콘**: 현재 1×1 투명 PNG placeholder. 배포 전에 실제 brand-mark conic-gradient 를 PNG 로 익스포트 필요.
 - **Synced lyrics 가용성**: lrclib.net 에 데이터가 없는 곡은 untracked YTM placeholder 만 표시. (CC0 라이선스 데이터 한계.)
 - **YTM Shuffle 상태 검출**: YTM 이 DOM 으로 셔플 상태를 노출하지 않아 클릭 카운터 + 비공식 internal `ytmusic-app.queue_.shuffleEnabled_` 폴백 사용. YTM 내부 변경 시 우리 모델이 일시적으로 어긋날 수 있음.
 - **CORS**: googleusercontent 아트워크는 `crossOrigin="anonymous"` 로 직접 로드. 다른 CDN 으로 변경 시 background fetch 우회 필요.
