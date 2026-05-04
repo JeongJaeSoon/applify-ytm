@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Applify YTM",
+  "version": "0.1.0",
+  "description": "Glassy music-player overlay for YouTube Music — synced lyrics, dynamic color from artwork.",
+  "minimum_chrome_version": "120",
+  "action": {
+    "default_title": "Toggle Applify",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://music.youtube.com/*"],
+      "js": ["src/content/main.ts"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["storage"],
+  "host_permissions": ["https://*.googleusercontent.com/*", "https://*.ytimg.com/*", "https://lrclib.net/*"],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*"],
+      "matches": ["https://music.youtube.com/*"]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+/* CSS custom properties driven at runtime by palette extraction.
+   Defaults match the prototype's neutral fallback palette. */
+:host, :root {
+  --bg-r: 22; --bg-g: 24; --bg-b: 32;
+  --bg-r2: 60; --bg-g2: 40; --bg-b2: 80;
+  --accent-r: 220; --accent-g: 200; --accent-b: 255;
+
+  --fg: 250 248 244;
+  --fg-muted: 250 248 244 / .62;
+  --fg-faint: 250 248 244 / .35;
+
+  --glass: 255 255 255 / .08;
+  --glass-strong: 255 255 255 / .14;
+  --glass-border: 255 255 255 / .12;
+
+  --blur: 40px;
+
+  --font-display: 'Noto Sans', 'Noto Sans KR', 'Noto Sans JP', ui-sans-serif, system-ui, sans-serif;
+  --font-body:    'Noto Sans', 'Noto Sans KR', 'Noto Sans JP', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    'Geist Mono', ui-monospace, monospace;
+  --font-lyrics:  'Noto Sans', 'Noto Sans KR', 'Noto Sans JP', ui-sans-serif, system-ui, sans-serif;
+}

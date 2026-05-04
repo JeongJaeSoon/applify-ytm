@@ -1,0 +1,698 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* Tailwind v4 theme extension — register custom-property-driven utilities */
+@theme {
+  --color-fg: rgb(var(--fg));
+  --color-fg-muted: rgb(var(--fg-muted));
+  --color-fg-faint: rgb(var(--fg-faint));
+  --color-glass: rgb(var(--glass));
+  --color-glass-strong: rgb(var(--glass-strong));
+  --color-glass-border: rgb(var(--glass-border));
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+  --font-lyrics: var(--font-lyrics);
+}
+
+/* Host reset — applies to the Shadow DOM host or, in preview mode, to the .applify-host wrapper.
+   The host stays mounted (and the toggle pill stays visible); only `.applify-content` fades. */
+:host, .applify-host {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  pointer-events: none;
+  font-family: var(--font-body);
+  color: rgb(var(--fg));
+}
+:host > *, .applify-host > * { pointer-events: auto; }
+
+.applify-content {
+  position: absolute; inset: 0;
+  transition: opacity .35s ease, filter .35s ease;
+  opacity: 1;
+}
+.applify-content.is-off {
+  opacity: 0;
+  filter: blur(8px);
+  pointer-events: none;
+}
+.applify-content.is-off * { pointer-events: none !important; }
+
+/* Top-right Applify toggle pill — always visible, even when content is off */
+.applify-toggle {
+  position: absolute; right: 22px; top: 18px; z-index: 2147483647;
+  pointer-events: auto;
+  display: flex; align-items: center; gap: 8px;
+  height: 32px; padding: 0 12px;
+  border-radius: 999px;
+  background: rgb(var(--glass));
+  border: .5px solid rgb(var(--glass-border));
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  font-family: var(--font-mono); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .12em;
+  color: rgb(var(--fg-muted));
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  appearance: none;
+}
+.applify-toggle:hover { background: rgb(var(--glass-strong)); color: rgb(var(--fg)); }
+.applify-toggle[data-on="1"] { color: rgb(var(--fg)); background: rgb(var(--glass-strong)); }
+.applify-toggle .sw {
+  width: 22px; height: 12px; border-radius: 999px;
+  background: rgba(120,120,120,.4);
+  position: relative; transition: background .2s;
+}
+.applify-toggle .sw::after {
+  content: ""; position: absolute; top: 1px; left: 1px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #fff; transition: transform .2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+.applify-toggle[data-on="1"] .sw {
+  background: rgb(var(--accent-r) var(--accent-g) var(--accent-b) / .9);
+}
+.applify-toggle[data-on="1"] .sw::after { transform: translateX(10px); }
+
+*, *::before, *::after { box-sizing: border-box; }
+button { font-family: inherit; color: inherit; }
+
+/* Background canvas + grain + vignette */
+.bg-canvas {
+  position: absolute; inset: -20%;
+  z-index: 0;
+  background:
+    radial-gradient(60% 50% at 22% 30%, rgb(var(--bg-r2) var(--bg-g2) var(--bg-b2) / .95), transparent 60%),
+    radial-gradient(70% 60% at 78% 78%, rgb(var(--bg-r) var(--bg-g) var(--bg-b) / 1) 0%, transparent 65%),
+    radial-gradient(40% 40% at 60% 20%, rgb(var(--accent-r) var(--accent-g) var(--accent-b) / .35), transparent 70%),
+    linear-gradient(180deg, rgb(var(--bg-r) var(--bg-g) var(--bg-b)) 0%, rgb(var(--bg-r2) var(--bg-g2) var(--bg-b2)) 100%);
+  filter: saturate(1.1);
+  transition: background 1.4s cubic-bezier(.4,.0,.2,1);
+  animation: drift 28s ease-in-out infinite alternate;
+}
+@keyframes drift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(2%, -2%, 0) scale(1.05); }
+  100% { transform: translate3d(-2%, 2%, 0) scale(1.02); }
+}
+.bg-grain {
+  position: absolute; inset: 0; z-index: 1;
+  pointer-events: none;
+  opacity: .06; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+.bg-vignette {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 50%, transparent 50%, rgba(0,0,0,.45) 100%);
+}
+
+/* Topbar */
+.topbar {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px;
+  pointer-events: none;
+}
+.topbar > * { pointer-events: auto; }
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 600; font-size: 14px; letter-spacing: -0.01em;
+  color: rgb(var(--fg));
+}
+.brand-mark {
+  width: 22px; height: 22px;
+  border-radius: 7px;
+  background: conic-gradient(from 210deg at 50% 50%,
+    rgb(var(--accent-r) var(--accent-g) var(--accent-b) / 1),
+    rgb(var(--bg-r2) var(--bg-g2) var(--bg-b2) / 1),
+    rgb(var(--bg-r) var(--bg-g) var(--bg-b) / 1),
+    rgb(var(--accent-r) var(--accent-g) var(--accent-b) / 1));
+  box-shadow:
+    inset 0 0 0 .5px rgba(255,255,255,.4),
+    inset 0 -6px 12px rgba(0,0,0,.3),
+    0 4px 14px rgba(0,0,0,.25);
+  position: relative;
+}
+.brand-mark::after {
+  content: ""; position: absolute; inset: 5px;
+  border-radius: 50%;
+  background: rgb(var(--fg) / .92);
+  mix-blend-mode: overlay;
+}
+.brand .tm {
+  font-family: var(--font-mono); font-size: 9px;
+  color: rgb(var(--fg-muted));
+  align-self: flex-start; transform: translateY(2px);
+}
+
+/* Glass surface utility */
+.glass {
+  background: rgb(var(--glass));
+  border: .5px solid rgb(var(--glass-border));
+  backdrop-filter: blur(var(--blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(180%);
+  box-shadow:
+    0 1px 0 rgb(var(--glass-border)) inset,
+    0 30px 80px rgba(0,0,0,.35);
+}
+
+/* Now Playing grid: split → centered smooth collapse */
+.np {
+  position: absolute; inset: 0;
+  padding: 76px 48px 96px;
+  display: grid;
+  gap: clamp(24px, 4vw, 56px);
+  align-items: stretch; justify-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  justify-content: center;
+  max-width: 1280px;
+  margin: 0 auto;
+  transition: grid-template-columns .6s cubic-bezier(.4,.0,.2,1),
+              max-width .6s cubic-bezier(.4,.0,.2,1);
+}
+/* Tight controls cluster — Transport sits just below Progress timestamps with a
+ * narrow overlap (~10px) so they look related, not glued together. */
+.np-controls > :nth-child(2) { margin-top: -10px; }   /* Transport — small overlap with Progress */
+.np-controls > :nth-child(3) { margin-top: 6px; }     /* ExtrasBar — distinct cluster */
+.np[data-lyrics-off="1"] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0fr);
+  max-width: 720px;
+}
+
+/* Artwork stack */
+.art-stack {
+  position: relative;
+  width: 100%;
+  max-width: min(420px, 38vh);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+}
+.art-reflect {
+  position: absolute; inset: 0;
+  border-radius: 28px;
+  transform: translateY(14px) scale(.96);
+  filter: blur(48px) saturate(1.4);
+  opacity: .55;
+  background-size: cover; background-position: center;
+  z-index: 0;
+}
+.art {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.18) inset,
+    0 30px 80px rgba(0,0,0,.55),
+    0 8px 24px rgba(0,0,0,.35);
+  background-size: cover; background-position: center;
+  transition: transform .4s cubic-bezier(.2,.8,.2,1);
+}
+.art.playing-pulse { animation: artPulse 6s ease-in-out infinite; }
+@keyframes artPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.012); }
+}
+.art-frame {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  border-radius: 18px;
+  box-shadow:
+    inset 0 0 0 .5px rgba(255,255,255,.18),
+    inset 0 1px 0 rgba(255,255,255,.25);
+}
+.faux-art {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(120% 80% at 30% 20%, rgb(var(--accent-r) var(--accent-g) var(--accent-b) / .8), transparent 60%),
+    radial-gradient(80% 100% at 80% 90%, rgb(var(--bg-r) var(--bg-g) var(--bg-b) / 1), rgb(var(--bg-r2) var(--bg-g2) var(--bg-b2) / 1));
+}
+.faux-art .glyph {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-lyrics);
+  font-style: italic;
+  font-size: 30vmin; line-height: 1;
+  color: rgba(255,255,255,.18);
+  letter-spacing: -0.04em;
+  user-select: none;
+}
+
+/* Meta */
+.meta {
+  width: 100%;
+  display: flex; flex-direction: column; gap: 8px;
+  align-items: center;
+  text-align: center;
+  max-width: 520px;
+}
+.meta-eyebrow {
+  font-family: var(--font-mono); font-size: 9.5px;
+  text-transform: uppercase; letter-spacing: .16em;
+  color: rgb(var(--fg-muted));
+  display: flex; gap: 8px; align-items: center;
+  margin-bottom: 2px;
+}
+.meta-eyebrow .sep { opacity: .5; }
+.meta h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(18px, 1.6vw, 24px);
+  line-height: 1.1;
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+}
+.meta .artist {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(13px, 1.05vw, 15px);
+  color: rgb(var(--fg));
+  opacity: .72;
+  letter-spacing: -0.005em;
+}
+
+/* Progress */
+.progress {
+  width: 100%; max-width: 520px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.scrub {
+  position: relative;
+  height: 18px; cursor: pointer;
+  display: flex; align-items: center;
+}
+.scrub-track {
+  position: relative; width: 100%; height: 3px; border-radius: 2px;
+  background: rgb(var(--fg) / .14);
+  overflow: hidden;
+  transition: height .15s ease;
+}
+.scrub:hover .scrub-track { height: 5px; }
+.scrub-fill {
+  position: absolute; inset: 0 auto 0 0;
+  background: rgb(var(--fg));
+  border-radius: 2px;
+  transition: width .25s linear;
+}
+.scrub-buf {
+  position: absolute; inset: 0 auto 0 0;
+  background: rgb(var(--fg) / .08);
+  border-radius: 2px;
+}
+.scrub-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 11px; height: 11px; border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0,0,0,.4);
+  opacity: 0; transition: opacity .15s ease;
+}
+.scrub:hover .scrub-thumb { opacity: 1; }
+.timestamps {
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 11px;
+  color: rgb(var(--fg-muted));
+  font-variant-numeric: tabular-nums;
+}
+
+/* Transport */
+.transport {
+  width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  gap: 22px;
+}
+.tbtn {
+  appearance: none; border: 0; background: transparent;
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: rgb(var(--fg)); opacity: .82;
+  cursor: pointer; transition: all .15s ease;
+}
+.tbtn:hover { opacity: 1; background: rgb(var(--glass)); }
+.tbtn.play {
+  width: 52px; height: 52px;
+  background: rgb(var(--fg));
+  color: rgb(var(--bg-r) var(--bg-g) var(--bg-b));
+  box-shadow: 0 6px 24px rgba(0,0,0,.4);
+  opacity: 1;
+}
+.tbtn.play:hover { transform: scale(1.04); }
+.tbtn svg { width: 22px; height: 22px; }
+.tbtn.play svg { width: 26px; height: 26px; }
+.tbtn.small svg { width: 16px; height: 16px; }
+/* Toggle button states — pure greyscale (off = muted grey, on = full white) so the
+ * indicator stays consistent regardless of the dynamic accent palette. */
+.tbtn[data-on="1"] { color: rgb(var(--fg)); opacity: 1; }
+.repeat-btn, .shuffle-btn { position: relative; }
+.repeat-one-badge {
+  position: absolute; top: 4px; right: 4px;
+  font-family: var(--font-mono); font-size: 8px; font-weight: 700;
+  line-height: 1; padding: 2px 3px; border-radius: 6px;
+  background: rgb(var(--fg));
+  color: rgb(var(--bg-r) var(--bg-g) var(--bg-b));
+  letter-spacing: 0;
+}
+/* Active state dot. Default position is the icon's empty middle (used by Repeat ALL). */
+.repeat-active-dot {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: rgb(var(--fg));
+  pointer-events: none;
+}
+/* Shuffle's icon already has visual weight in its center, so its dot moves to the
+ * top-right corner — same locale family as the Repeat ONE "1" badge. */
+.shuffle-btn .repeat-active-dot {
+  top: 5px; left: auto; right: 5px;
+  transform: none;
+}
+
+.extras {
+  width: 100%; max-width: 520px;
+  display: flex; align-items: center; justify-content: space-between;
+  color: rgb(var(--fg-muted));
+}
+.vol {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .14em;
+}
+/* Volume: visual bar wrapped in a larger hit target so clicks/drags don't miss the 3px line. */
+.vol-bar-hit {
+  display: flex; align-items: center;
+  width: 120px; height: 22px;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+}
+.vol-bar-hit:focus-visible .vol-bar { background: rgb(var(--fg) / .22); }
+.vol-bar-hit:hover .vol-bar { height: 6px; }
+.vol-bar {
+  width: 100%; height: 4px; border-radius: 2px;
+  background: rgb(var(--fg) / .14);
+  position: relative; overflow: hidden;
+  pointer-events: none;
+  transition: height .15s ease, background .15s ease;
+}
+.vol-fill {
+  position: absolute; inset: 0 auto 0 0;
+  background: rgb(var(--fg) / .75); border-radius: 2px;
+}
+
+.extra-actions { display: flex; gap: 6px; }
+.ibtn {
+  appearance: none; border: 0; background: transparent; color: inherit;
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.ibtn:hover { background: rgb(var(--glass)); color: rgb(var(--fg)); }
+.ibtn[data-on="1"] { color: rgb(var(--fg)); }
+.ibtn svg { width: 16px; height: 16px; }
+
+/* Lyrics */
+.lyrics {
+  width: 100%; max-width: 520px;
+  /* The wrap (parent) caps total height. Inside it, .lyrics flexes to fill the
+   * remaining vertical space (wrap height minus hint pill, if shown). */
+  align-self: center;
+  border-radius: 18px;
+  padding: 0 6px;
+  overflow: hidden;
+  position: relative;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 82%, transparent 100%);
+          mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 82%, transparent 100%);
+}
+.lyrics-inner {
+  display: flex; flex-direction: column;
+  gap: 18px;
+  padding: 35vh 24px 35vh;
+  transition: transform .9s cubic-bezier(.4,0,.2,1);
+}
+.lyric-line {
+  font-family: var(--font-lyrics);
+  font-weight: 700;
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.22;
+  letter-spacing: -0.012em;
+  color: rgb(var(--fg) / .28);
+  transition: color .5s ease, filter .5s ease, transform .5s ease, opacity .5s ease;
+  filter: blur(.4px);
+  cursor: pointer;
+  /* Korean wrap: break only at spaces (어절 단위), so a single trailing syllable
+   * like "요" / "죠" never gets stranded on its own line. text-wrap: balance
+   * distributes a wrapped line into two visually-even rows when wrap is needed. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  hyphens: auto;
+}
+.lyric-line:hover { color: rgb(var(--fg) / .55); filter: blur(0); }
+.lyric-line.active { color: rgb(var(--fg)); filter: blur(0); transform: scale(1.02); }
+.lyric-line.passed { color: rgb(var(--fg) / .35); filter: blur(0); }
+
+/* Untracked = lyrics from YTM, no per-line timestamps. Visually distinct from synced:
+ * - smaller, lighter font weight (no heavy 700)
+ * - uniform dim color (no active/passed states cycling)
+ * - no cursor/hover affordance (lines aren't seekable) */
+.lyrics-wrap.is-untracked .lyric-line {
+  font-weight: 500;
+  font-size: clamp(15px, 1.4vw, 19px);
+  color: rgb(var(--fg) / .58);
+  filter: blur(0);
+  cursor: default;
+  transform: none;
+  transition: none;
+}
+.lyrics-wrap.is-untracked .lyric-line:hover { color: rgb(var(--fg) / .58); }
+.lyrics-wrap.is-untracked .lyric-line.active,
+.lyrics-wrap.is-untracked .lyric-line.passed { color: rgb(var(--fg) / .58); transform: none; }
+/* Hide instrumental "loading dots" while in YTM-placeholder mode — full lyrics text
+ * is already visible, so the spinner-like dots only add noise. */
+.lyrics-wrap.is-untracked .lyric-line:has(.dot-row) { display: none; }
+.lyrics-wrap.is-untracked .lyrics-inner {
+  /* Untracked = static list. No auto-translate; let the user scroll freely. */
+  transform: none !important;
+  padding: 16px 24px;
+  gap: 10px;
+}
+/* Free scroll while in placeholder mode — full content visible without auto-scroll.
+ * Top fade is removed so the first line never sits inside a transparency gradient;
+ * bottom fade hints "scroll for more". */
+.lyrics-wrap.is-untracked > .lyrics {
+  overflow-y: auto;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 92%, transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 0%, #000 92%, transparent 100%);
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--fg) / .25) transparent;
+}
+/* Ensure the first line has breathing room from the hint pill above. */
+.lyrics-wrap.is-untracked .lyrics-inner { padding-top: 8px; }
+.lyrics-wrap.is-untracked > .lyrics::-webkit-scrollbar { width: 6px; }
+.lyrics-wrap.is-untracked > .lyrics::-webkit-scrollbar-track { background: transparent; }
+.lyrics-wrap.is-untracked > .lyrics::-webkit-scrollbar-thumb {
+  background: rgb(var(--fg) / .2); border-radius: 3px;
+}
+.lyrics-wrap.is-untracked > .lyrics::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--fg) / .35);
+}
+
+/* The wrap sizes to its content so the parent (.np-right) can center it vertically,
+ * matching the left column's centered cluster. height: auto + max-height puts the
+ * lyrics block in the middle of the grid row, not stretched to fill it.
+ * --applify-cluster-h is published by NowPlaying via ResizeObserver — it mirrors
+ * the left column's content height (art top → controls bottom). Sizing the wrap
+ * to that exact value makes both columns share the same Y range under
+ * grid `align-items: center`, so art top = wrap top and extras bottom = wrap bottom. */
+.lyrics-wrap {
+  position: relative;
+  width: 100%; max-width: 520px;
+  align-self: center;
+  display: flex; flex-direction: column;
+  height: var(--applify-cluster-h, auto);
+  max-height: var(--applify-cluster-h, min(78vh, 720px));
+}
+.lyrics-wrap > .lyrics { flex: 1 1 auto; min-height: 0; }
+
+.lyrics-hint {
+  flex: none;
+  align-self: center;
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .16em;
+  text-transform: uppercase; color: rgb(var(--fg));
+  background: rgb(var(--accent-r) var(--accent-g) var(--accent-b) / .18);
+  border: .5px solid rgb(var(--accent-r) var(--accent-g) var(--accent-b) / .35);
+  -webkit-backdrop-filter: blur(20px);
+          backdrop-filter: blur(20px);
+  padding: 7px 14px; border-radius: 999px;
+  white-space: nowrap;
+  margin-bottom: 12px;
+  z-index: 3;
+  box-shadow: 0 4px 16px rgb(var(--accent-r) var(--accent-g) var(--accent-b) / .15);
+}
+.lyrics-hint-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgb(var(--accent-r) var(--accent-g) var(--accent-b));
+  box-shadow: 0 0 8px rgb(var(--accent-r) var(--accent-g) var(--accent-b) / .8);
+  animation: hintPulse 1.4s ease-in-out infinite;
+}
+@keyframes hintPulse {
+  0%, 100% { opacity: .6; transform: scale(.85); }
+  50%      { opacity: 1;  transform: scale(1.15); }
+}
+.lyric-line .dot-row { display: flex; gap: 6px; padding: 6px 0; }
+.lyric-line .dot-row span {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgb(var(--fg) / .35);
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+.lyric-line .dot-row span:nth-child(2) { animation-delay: .2s; }
+.lyric-line .dot-row span:nth-child(3) { animation-delay: .4s; }
+.lyric-line.active .dot-row span { background: rgb(var(--fg)); }
+@keyframes dotPulse {
+  0%, 100% { opacity: .35; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
+}
+
+/* Mini player */
+.mini {
+  position: absolute; left: 22px; bottom: 22px; z-index: 12;
+  width: 320px;
+  border-radius: 14px;
+  padding: 8px 12px 8px 8px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  transition: transform .25s cubic-bezier(.3,.8,.4,1), opacity .25s ease;
+}
+.mini.hidden { transform: translateY(120%); opacity: 0; pointer-events: none; }
+.mini-art {
+  width: 44px; height: 44px; border-radius: 8px;
+  background-size: cover; background-position: center;
+  flex: 0 0 auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35), inset 0 0 0 .5px rgba(255,255,255,.18);
+  overflow: hidden; position: relative;
+}
+.mini-art .glyph {
+  position: absolute; inset: 0; display: flex; align-items: center;
+  justify-content: center; font-family: var(--font-lyrics);
+  font-style: italic; font-size: 24px; color: rgba(255,255,255,.55);
+}
+.mini-info {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.mini-title {
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 600; letter-spacing: -0.01em;
+  color: rgb(var(--fg));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mini-artist {
+  font-size: 11.5px; color: rgb(var(--fg-muted));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mini-controls { display: flex; gap: 2px; }
+.mini-controls .ibtn { width: 28px; height: 28px; }
+.mini-controls .ibtn svg { width: 14px; height: 14px; }
+.mini-progress {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 2px; background: rgb(var(--fg) / .1);
+  overflow: hidden; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px;
+}
+.mini-progress-fill {
+  height: 100%; background: rgb(var(--fg)); width: 0%;
+  transition: width .25s linear;
+}
+
+/* Queue strip */
+.queue {
+  position: absolute; right: 22px; bottom: 22px; z-index: 11;
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-family: var(--font-mono); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .14em;
+  color: rgb(var(--fg-muted));
+}
+.queue .label { opacity: .6; }
+.queue .next {
+  color: rgb(var(--fg));
+  font-family: var(--font-display);
+  font-size: 12px; letter-spacing: -0.005em;
+  text-transform: none;
+}
+.queue .arrow { opacity: .5; }
+
+@media (max-width: 900px) {
+  .np { grid-template-columns: 1fr; grid-template-rows: auto auto; }
+  /* Single-column layout — no left-cluster to mirror, fall back to a viewport cap. */
+  .lyrics-wrap { height: auto; max-height: 38vh; }
+  .art-stack { max-width: min(280px, 28vh); }
+}
+@media (max-height: 720px) {
+  .np { padding: 64px 40px 80px; }
+  .art-stack { max-width: min(320px, 32vh); }
+  .lyrics-inner { gap: 14px; }
+}
+
+/* Loading state — shown while waiting for YTM sync engine to receive the first track */
+.loading-state {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 18px;
+  z-index: 5;
+}
+.loading-pulse {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background:
+    radial-gradient(50% 50% at 50% 50%, rgb(var(--accent-r) var(--accent-g) var(--accent-b) / .9), transparent 70%),
+    rgb(var(--glass));
+  border: .5px solid rgb(var(--glass-border));
+  box-shadow: 0 0 40px rgb(var(--accent-r) var(--accent-g) var(--accent-b) / .25);
+  animation: loadingPulse 1.6s ease-in-out infinite;
+}
+@keyframes loadingPulse {
+  0%, 100% { transform: scale(0.85); opacity: .7; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+.loading-text {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  color: rgb(var(--fg-muted));
+}
+.loading-hint {
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  letter-spacing: -.005em;
+  color: rgb(var(--fg-faint));
+  margin-top: -6px;
+  text-align: center;
+  max-width: 240px;
+  line-height: 1.4;
+}
+
+/* Toast */
+.toast {
+  position: absolute; left: 50%; top: 80px; z-index: 30;
+  transform: translate(-50%, -10px);
+  padding: 8px 14px; border-radius: 999px;
+  font-family: var(--font-mono); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .14em;
+  color: rgb(var(--fg)); background: rgb(var(--glass));
+  border: .5px solid rgb(var(--glass-border));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  opacity: 0;
+  transition: opacity .25s, transform .25s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
